@@ -7,45 +7,83 @@
 ![Stash App Demo](assets/demo.webp)
 
 ## Overview
-Stash is a lightweight, local-first web application designed to help you curate, understand, and retain knowledge from various sources around the web. Built with a beautiful dark-mode interface and focusing on high utility, Stash is perfect for keeping track of interesting links, tweets, books, and GitHub repositories without losing them in a sea of browser bookmarks.
+Stash is a extremely polished, local-first web application designed to help you curate, understand, and retain knowledge from various sources around the web. Built with a beautiful interface, dark/light mode support, and focusing on high utility, Stash is perfect for keeping track of interesting links, tweets, books, and GitHub repositories without losing them in a sea of browser bookmarks.
 
-## Features
+---
 
-- **Multi-Source Tracking**: Categorize your curated knowledge by source (X/Twitter, Reddit, GitHub, Books/PDFs, and general Links).
-- **Spaced Repetition & Revisit Queue**: Never forget what you learned. Set customized revisiting intervals (Tomorrow, 3 days, 1 week, etc.) to actively review items when they are due.
-- **Auto-Detection**: Simply paste a URL (like `github.com/...` or `x.com/...`) and Stash automatically categorizes the item type.
-- **Smart Metadata & Progress tracking**: 
-  - Track your **understanding progress** of complex repositories (like GitHub projects) via an interactive slider.
-  - Add highlights from books or PDF excerpts.
-  - Tag system with an auto-generated tag cloud to quickly filter your stashed items.
-- **Keyboard Friendly**: Hit `Cmd+K` (or `Ctrl+K`) anywhere to quickly stash a new piece of knowledge.
-- **Privacy First**: Everything is stored directly in your browser's `localStorage`. No accounts, no data leaving your machine, no databases to set up.
+## 🚀 Key Features
 
-## Getting Started
+### 🧠 Spaced Repetition & Habit Tracking
+Never forget what you learned. Set exact date schedules using the **Date Picker** to actively review items when they are due. 
+- Receive **Browser Notifications** for due items.
+- Dynamic **Revisit Highlighting** shows you exactly how far out your scheduled reviews are.
 
-Since Stash is a purely client-side HTML application, you can run it instantly without any build steps or server requirements!
+### ⚡ Power User Capabilities
+- **Bulk Management**: Multi-select items via checkboxes. Export or Bulk Delete items using the sliding Action Bar.
+- **Advanced Search**: Multi-word, full-text search across titles, notes, and tags. Refine with an interactive Tag Cloud and advanced Sort options.
+- **Keyboard Navigation**: Use `Cmd+K` to quickly stash, `Esc` to close modals, and `Up/Down` arrow keys to seamlessly traverse your stash list!
+
+### 🔒 100% Local & Secure Data Persistence
+- **Offline PWA support**: Install Stash directly to your OS dock/homescreen. It works completely offline!
+- **IndexedDB**: All data is saved instantly and asynchronously to `IndexedDB` with practically unlimited storage capacity.
+- **Custom UI Dialogs**: No more fragile browser `alert()` pop-ups. Stash uses a robust, beautiful custom modal system for all deletions and JSON Import/Export flows.
+- **Safety Reminders**: An auto-backup banner protects your data by nudging you to download your JSON backup if 7 days have passed.
+- **Archive System**: Safely archive items instead of permanently deleting them. Easily restore them from the dedicated Archive tab.
+
+### 🎨 Beautiful, Responsive Polish
+- **Dark/Light Mode**: Instantly toggle themes that persist across sessions.
+- **Mobile Responsive**: Adapts perfectly to mobile screens with touch-friendly targets and an elegant slide-up detail panel.
+- **Zero Empty States**: Beautiful illustrative empty states guide you when your stash is clear.
+- **Active Link Health**: Instantly verify if a URL is still active using the "Verify Link" CORS proxy tool.
+
+---
+
+## 📸 Workflows & Demonstrations
+
+### 1. The Add & Edit Flow with Spaced Repetition
+Quickly add items, automatically detect their types (GitHub, Reddit, X), edit their details, and schedule exact revisit dates.
+
+![Spaced Repetition Flow](assets/revisit-date.webp)
+
+### 2. Bulk Actions & Custom Dialogs
+Select multiple items, view the Action Bar, and safely bulk delete items with the custom Stash Dialog interface.
+
+![Bulk Delete & Dialogs](assets/bulk-delete.webp)
+
+### 3. Dashboard, Archiving, and Theme Toggling
+Track your knowledge growth! View analytics in the Dashboard, safely archive notes, and freely toggle Dark/Light themes.
+
+![Dashboard & Growth Features](assets/dashboard-growth.webp)
+
+### 4. Fully Mobile Responsive
+Use Stash flawlessly on narrow screens with our slide-up detail panel and bottom action bars.
+
+![Mobile Responsiveness](assets/mobile-responsive.webp)
+
+---
+
+## 🛠 Getting Started
+
+Since Stash is a purely client-side HTML application with a Service Worker, you can run it instantly:
 
 1. Clone or download this repository.
 2. Open `stash.html` directly in your favorite modern browser (e.g., Chrome, Firefox, Safari, Arc).
 3. Start stashing!
 
-## Technologies Used
+## 🌐 Deployment (GitHub Pages)
 
-- **Vanilla HTML / CSS / JavaScript**: Zero external dependencies and extremely fast.
-- **CSS Variables**: Theming is fully customizable via root CSS variables.
-- **Web Storage API**: `localStorage` handles all data persistence effortlessly across browser reloads.
-- **Google Fonts**: Uses 'IBM Plex Mono' and 'Fraunces' for an elegant typography mix.
+Because Stash is self-contained with no backend, hosting it online for your personal use is incredibly easy using **GitHub Pages**.
 
-## Customization
+1. Fork or create a new public/private GitHub repository containing `stash.html`, `sw.js`, `manifest.json`, and the `assets/` folder.
+2. Go to the repository **Settings > Pages**.
+3. Under "Build and deployment", select **Deploy from a branch** and choose your `main` branch.
+4. Access your live PWA Stash app at `https://<your-username>.github.io/<repository-name>/stash.html`.
 
-Stash's design system is modular. You can easily tweak the look and feel in the `:root` styles section within the `<style>` block in `stash.html`:
+*(Note: Because Stash uses IndexedDB, your data remains safely stored in the browser of the device you are using, even when accessed via a public GitHub Pages URL. Install it directly as an app from the browser URL bar!)*
 
-```css
-:root {
-  --bg: #0e0f0e;
-  --text: #d4d3c8;
-  --accent: #c8f060; /* Change this for a new primary flavor! */
-  --surface: #161714;
-  /* ... */
-}
-```
+## 🧱 Technologies Used
+
+- **Vanilla HTML / CSS / JavaScript**: Zero external node dependencies. Extremely fast.
+- **Service Worker / Web App Manifest**: Full Progressive Web App (PWA) installation features and offline caching.
+- **IndexedDB via Promises**: Asynchronous, non-blocking data persistence.
+- **CSS Variables**: Seamless Dark & Light themes.

@@ -1,0 +1,23 @@
+{
+  "name": "stash-log",
+  "version": "1.0.0",
+  "description": "<div align=\"center\">   <img src=\"assets/logo.png\" alt=\"Stash Logo\" width=\"120\" />   <h1>Stash</h1>   <p><em>Your Personal Knowledge Logbook</em></p> </div>",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KrishnaBharadwaj297/stash-log.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/KrishnaBharadwaj297/stash-log/issues"
+  },
+  "homepage": "https://github.com/KrishnaBharadwaj297/stash-log#readme",
+  "devDependencies": {
+    "prettier": "^3.8.1"
+  }
+}

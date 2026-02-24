@@ -1,0 +1,17 @@
+{
+  "name": "Stash",
+  "short_name": "Stash",
+  "description": "Your Personal Knowledge Logbook.",
+  "start_url": "./stash.html",
+  "display": "standalone",
+  "background_color": "#0e0f0e",
+  "theme_color": "#c8f060",
+  "icons": [
+    {
+      "src": "./assets/logo.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
