@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stash — Your Knowledge Logbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0e0f0e;
+    --surface: #161714;
+    --surface2: #1e1f1c;
+    --surface3: #252621;
+    --border: #2a2b27;
+    --border2: #363730;
+    --text: #d4d3c8;
+    --text-dim: #7a7a6e;
+    --text-muted: #4a4b44;
+    --accent: #c8f060;
+    --accent-dim: #8aab2a;
+    --accent-glow: rgba(200,240,96,0.08);
+    --red: #f06060;
+    --blue: #60a8f0;
+    --orange: #f0a060;
+    --purple: #b060f0;
+    --tag-bg: #1e1f1c;
+  }
+
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'IBM Plex Mono', monospace; font-size: 13px; line-height: 1.6; overflow: hidden; }
+
+  /* LAYOUT */
+  .app { display: grid; grid-template-columns: 280px 1fr 320px; height: 100vh; }
+
+  /* SIDEBAR */
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .logo {
+    padding: 24px 20px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo-mark {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .logo-mark::before {
+    content: '◈';
+    font-size: 16px;
+    opacity: 0.7;
+  }
+  .logo-sub { color: var(--text-muted); font-size: 11px; margin-top: 2px; letter-spacing: 0.05em; }
+
+  .nav-section { padding: 16px 12px 8px; }
+  .nav-label { color: var(--text-muted); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; padding: 0 8px 8px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: 4px;
+    cursor: pointer; color: var(--text-dim);
+    transition: all 0.15s; font-size: 12px;
+    border: 1px solid transparent;
+  }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: var(--accent-glow); color: var(--accent); border-color: rgba(200,240,96,0.15); }
+  .nav-item .count {
+    margin-left: auto; font-size: 10px;
+    background: var(--surface3); color: var(--text-muted);
+    padding: 1px 7px; border-radius: 20px;
+  }
+  .nav-item.active .count { background: rgba(200,240,96,0.15); color: var(--accent-dim); }
+
+  .type-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .dot-x { background: var(--text-dim); }
+  .dot-reddit { background: var(--orange); }
+  .dot-github { background: var(--blue); }
+  .dot-book { background: var(--purple); }
+  .dot-link { background: var(--text-muted); }
+  .dot-all { background: var(--accent); }
+
+  .revisit-box {
+    margin: 12px; border: 1px solid rgba(200,240,96,0.2);
+    background: var(--accent-glow); border-radius: 6px; padding: 14px;
+    cursor: pointer;
+  }
+  .revisit-box:hover { border-color: rgba(200,240,96,0.4); }
+  .revisit-title { color: var(--accent); font-size: 11px; font-weight: 500; margin-bottom: 4px; }
+  .revisit-sub { color: var(--text-dim); font-size: 11px; line-height: 1.4; }
+  .revisit-count { color: var(--accent); font-size: 20px; font-weight: 600; margin-top: 6px; font-family: 'Fraunces', serif; }
+
+  .tag-cloud { padding: 0 12px 12px; flex: 1; overflow-y: auto; }
+  .tag-cloud-label { color: var(--text-muted); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; padding: 8px; margin-bottom: 4px; }
+  .tags-wrap { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 4px; }
+  .tag-chip {
+    font-size: 11px; padding: 3px 9px; border-radius: 3px;
+    background: var(--surface2); color: var(--text-dim);
+    border: 1px solid var(--border); cursor: pointer;
+    transition: all 0.15s;
+  }
+  .tag-chip:hover, .tag-chip.active { background: var(--surface3); color: var(--text); border-color: var(--border2); }
+
+  /* MAIN */
+  .main { display: flex; flex-direction: column; overflow: hidden; }
+
+  .toolbar {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+    background: var(--surface);
+  }
+
+  .search-wrap { flex: 1; position: relative; }
+  .search-wrap::before { content: '⌕'; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 16px; pointer-events: none; }
+  .search-input {
+    width: 100%; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 4px;
+    padding: 9px 12px 9px 34px; color: var(--text);
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+    outline: none; transition: border-color 0.15s;
+  }
+  .search-input:focus { border-color: var(--border2); }
+  .search-input::placeholder { color: var(--text-muted); }
+
+  .sort-btn {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 4px; padding: 8px 14px; color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    cursor: pointer; white-space: nowrap;
+  }
+  .sort-btn:hover { border-color: var(--border2); color: var(--text); }
+
+  .add-btn {
+    background: var(--accent); border: none; border-radius: 4px;
+    padding: 9px 16px; color: #0e0f0e; font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap;
+    transition: opacity 0.15s;
+  }
+  .add-btn:hover { opacity: 0.85; }
+
+  .items-list { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 8px; }
+
+  /* ITEM CARD */
+  .item-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 5px; padding: 14px 16px;
+    cursor: pointer; transition: all 0.15s;
+    display: grid; grid-template-columns: 1fr auto;
+    gap: 8px; align-items: start;
+    position: relative; overflow: hidden;
+  }
+  .item-card::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px;
+  }
+  .item-card[data-type="x"]::before { background: var(--text-dim); }
+  .item-card[data-type="reddit"]::before { background: var(--orange); }
+  .item-card[data-type="github"]::before { background: var(--blue); }
+  .item-card[data-type="book"]::before { background: var(--purple); }
+  .item-card[data-type="link"]::before { background: var(--text-muted); }
+
+  .item-card:hover { border-color: var(--border2); background: var(--surface2); }
+  .item-card.selected { border-color: rgba(200,240,96,0.3); background: var(--accent-glow); }
+
+  .item-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .item-type-badge {
+    font-size: 10px; padding: 2px 7px; border-radius: 2px;
+    text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500;
+  }
+  .badge-x { background: rgba(122,122,110,0.2); color: var(--text-dim); }
+  .badge-reddit { background: rgba(240,160,96,0.15); color: var(--orange); }
+  .badge-github { background: rgba(96,168,240,0.15); color: var(--blue); }
+  .badge-book { background: rgba(176,96,240,0.15); color: var(--purple); }
+  .badge-link { background: rgba(74,75,68,0.4); color: var(--text-muted); }
+
+  .item-date { color: var(--text-muted); font-size: 10px; }
+  .item-due { color: var(--accent); font-size: 10px; }
+
+  .item-title { color: var(--text); font-size: 12px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+  .item-excerpt { color: var(--text-dim); font-size: 11px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .item-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+  .item-tag { font-size: 10px; padding: 2px 7px; border-radius: 2px; background: var(--surface3); color: var(--text-muted); }
+
+  .item-progress { margin-top: 8px; }
+  .progress-label { display: flex; justify-content: space-between; margin-bottom: 4px; }
+  .progress-text { color: var(--text-muted); font-size: 10px; }
+  .progress-pct { color: var(--blue); font-size: 10px; }
+  .progress-bar { height: 3px; background: var(--surface3); border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--blue); border-radius: 2px; transition: width 0.3s; }
+
+  .item-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+  .revisit-badge { font-size: 10px; padding: 2px 8px; border-radius: 2px; white-space: nowrap; }
+  .due-now { background: rgba(200,240,96,0.15); color: var(--accent); }
+  .due-soon { background: rgba(240,160,96,0.1); color: var(--orange); }
+
+  /* DETAIL PANEL */
+  .detail {
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+
+  .detail-header {
+    padding: 20px; border-bottom: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .detail-type-row { display: flex; align-items: center; gap: 8px; }
+  .detail-title { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 300; color: var(--text); line-height: 1.3; font-style: italic; }
+  .detail-url { color: var(--text-muted); font-size: 10px; text-decoration: none; display: block; margin-top: 4px; word-break: break-all; }
+  .detail-url:hover { color: var(--text-dim); }
+
+  .detail-body { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+
+  .detail-section-label { color: var(--text-muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+
+  .highlight-box {
+    background: var(--surface2); border-left: 3px solid var(--purple);
+    padding: 12px 14px; border-radius: 0 4px 4px 0;
+    font-size: 12px; color: var(--text-dim); line-height: 1.6;
+    font-family: 'Fraunces', serif; font-style: italic;
+  }
+
+  .notes-area {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 4px; padding: 10px 12px; color: var(--text);
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+    resize: none; outline: none; min-height: 100px; line-height: 1.6;
+  }
+  .notes-area:focus { border-color: var(--border2); }
+  .notes-area::placeholder { color: var(--text-muted); }
+
+  .progress-control { display: flex; flex-direction: column; gap: 8px; }
+  .progress-slider {
+    -webkit-appearance: none; width: 100%; height: 4px;
+    background: var(--surface3); border-radius: 2px; outline: none;
+  }
+  .progress-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 14px; height: 14px;
+    border-radius: 50%; background: var(--blue); cursor: pointer;
+  }
+  .progress-labels { display: flex; justify-content: space-between; }
+  .progress-labels span { font-size: 10px; color: var(--text-muted); }
+
+  .revisit-control { display: flex; gap: 8px; }
+  .revisit-btn {
+    flex: 1; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 4px; padding: 8px; color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    cursor: pointer; text-align: center; transition: all 0.15s;
+  }
+  .revisit-btn:hover { border-color: var(--border2); color: var(--text); }
+  .revisit-btn.primary { background: rgba(200,240,96,0.1); border-color: rgba(200,240,96,0.3); color: var(--accent); }
+  .revisit-btn.primary:hover { background: rgba(200,240,96,0.2); }
+
+  .open-link-btn {
+    width: 100%; background: transparent; border: 1px solid var(--border);
+    border-radius: 4px; padding: 10px; color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+    cursor: pointer; text-align: center; transition: all 0.15s;
+    text-decoration: none; display: block;
+  }
+  .open-link-btn:hover { border-color: var(--border2); color: var(--text); }
+
+  .detail-footer { padding: 16px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
+  .del-btn {
+    flex: 1; background: transparent; border: 1px solid var(--border);
+    border-radius: 4px; padding: 8px; color: var(--red);
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    cursor: pointer; opacity: 0.6; transition: opacity 0.15s;
+  }
+  .del-btn:hover { opacity: 1; border-color: var(--red); }
+  .save-btn {
+    flex: 2; background: var(--accent); border: none; border-radius: 4px;
+    padding: 8px; color: #0e0f0e; font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; font-weight: 600; cursor: pointer;
+  }
+
+  /* EMPTY STATE */
+  .empty-detail {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; height: 100%; gap: 12px;
+    padding: 40px; text-align: center;
+  }
+  .empty-detail-icon { font-size: 32px; opacity: 0.3; }
+  .empty-detail-text { color: var(--text-muted); font-size: 12px; line-height: 1.6; }
+
+  /* ADD MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(14,15,14,0.85);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100; backdrop-filter: blur(3px);
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: 8px; width: 520px; max-height: 80vh;
+    overflow-y: auto; padding: 28px;
+    transform: translateY(10px); transition: transform 0.2s;
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal-title { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 300; color: var(--text); margin-bottom: 20px; }
+
+  .form-row { margin-bottom: 16px; }
+  .form-label { display: block; color: var(--text-dim); font-size: 11px; margin-bottom: 6px; }
+  .form-input, .form-textarea, .form-select {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 4px; padding: 9px 12px; color: var(--text);
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px; outline: none;
+    transition: border-color 0.15s;
+  }
+  .form-input:focus, .form-textarea:focus, .form-select:focus { border-color: var(--border2); }
+  .form-textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+  .form-select option { background: var(--surface); }
+  .form-input::placeholder, .form-textarea::placeholder { color: var(--text-muted); }
+
+  .type-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+  .type-tab {
+    padding: 6px 14px; border-radius: 3px; font-size: 11px;
+    border: 1px solid var(--border); cursor: pointer; color: var(--text-dim);
+    background: var(--surface2); font-family: 'IBM Plex Mono', monospace;
+    transition: all 0.15s;
+  }
+  .type-tab.active { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
+
+  .modal-actions { display: flex; gap: 8px; margin-top: 20px; }
+  .modal-cancel {
+    flex: 1; background: transparent; border: 1px solid var(--border);
+    border-radius: 4px; padding: 10px; color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px; cursor: pointer;
+  }
+  .modal-save {
+    flex: 2; background: var(--accent); border: none; border-radius: 4px;
+    padding: 10px; color: #0e0f0e; font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px; font-weight: 600; cursor: pointer;
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  .no-results { padding: 40px 20px; text-align: center; color: var(--text-muted); font-size: 12px; }
+
+  /* animate in */
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .item-card { animation: fadeSlide 0.2s ease both; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-mark">Stash</div>
+      <div class="logo-sub">Personal Knowledge Logbook</div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Views</div>
+      <div class="nav-item active" data-filter="all" onclick="setFilter('all', this)">
+        <span class="type-dot dot-all"></span> All Items
+        <span class="count" id="count-all">0</span>
+      </div>
+      <div class="nav-item" data-filter="x" onclick="setFilter('x', this)">
+        <span class="type-dot dot-x"></span> X / Twitter
+        <span class="count" id="count-x">0</span>
+      </div>
+      <div class="nav-item" data-filter="reddit" onclick="setFilter('reddit', this)">
+        <span class="type-dot dot-reddit"></span> Reddit
+        <span class="count" id="count-reddit">0</span>
+      </div>
+      <div class="nav-item" data-filter="github" onclick="setFilter('github', this)">
+        <span class="type-dot dot-github"></span> GitHub Repos
+        <span class="count" id="count-github">0</span>
+      </div>
+      <div class="nav-item" data-filter="book" onclick="setFilter('book', this)">
+        <span class="type-dot dot-book"></span> Books / PDFs
+        <span class="count" id="count-book">0</span>
+      </div>
+      <div class="nav-item" data-filter="link" onclick="setFilter('link', this)">
+        <span class="type-dot dot-link"></span> Other Links
+        <span class="count" id="count-link">0</span>
+      </div>
+    </div>
+
+    <div class="revisit-box" onclick="setFilter('due', null)">
+      <div class="revisit-title">◎ Revisit Queue</div>
+      <div class="revisit-count" id="due-count">0</div>
+      <div class="revisit-sub">items due for review today</div>
+    </div>
+
+    <div class="tag-cloud">
+      <div class="tag-cloud-label">Tags</div>
+      <div class="tags-wrap" id="tag-cloud"></div>
+    </div>
+  </aside>
+
+  <!-- MAIN LIST -->
+  <main class="main">
+    <div class="toolbar">
+      <div class="search-wrap">
+        <input class="search-input" type="text" placeholder="Search titles, notes, tags..." id="search-input" oninput="renderList()">
+      </div>
+      <button class="sort-btn" onclick="cycleSort()">Sort: <span id="sort-label">Recent</span></button>
+      <button class="add-btn" onclick="openModal()">+ Add</button>
+    </div>
+    <div class="items-list" id="items-list"></div>
+  </main>
+
+  <!-- DETAIL -->
+  <aside class="detail" id="detail-panel">
+    <div class="empty-detail" id="empty-detail">
+      <div class="empty-detail-icon">◈</div>
+      <div class="empty-detail-text">Select an item to view<br>details and notes</div>
+    </div>
+    <div id="detail-content" style="display:none; flex-direction:column; height:100%;">
+      <div class="detail-header">
+        <div class="detail-type-row">
+          <span class="item-type-badge" id="d-badge"></span>
+          <span class="item-date" id="d-date"></span>
+        </div>
+        <div class="detail-title" id="d-title"></div>
+        <a class="detail-url" id="d-url" href="#" target="_blank"></a>
+      </div>
+      <div class="detail-body">
+
+        <div id="highlight-section" style="display:none">
+          <div class="detail-section-label">Highlight / Excerpt</div>
+          <div class="highlight-box" id="d-highlight"></div>
+        </div>
+
+        <div>
+          <div class="detail-section-label">Your Notes</div>
+          <textarea class="notes-area" id="d-notes" placeholder="Write your thoughts, questions, key takeaways..."></textarea>
+        </div>
+
+        <div id="progress-section" style="display:none">
+          <div class="detail-section-label">Understanding Progress</div>
+          <div class="progress-control">
+            <input type="range" class="progress-slider" id="d-progress" min="0" max="100" step="5" oninput="updateProgressLabel()">
+            <div class="progress-labels">
+              <span>Not started</span>
+              <span id="progress-val">0%</span>
+              <span>Fully understood</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="detail-section-label">Spaced Repetition</div>
+          <div class="revisit-control">
+            <button class="revisit-btn" onclick="snoozeItem(3)">+3 days</button>
+            <button class="revisit-btn" onclick="snoozeItem(7)">+1 week</button>
+            <button class="revisit-btn primary" onclick="snoozeItem(14)">+2 weeks</button>
+            <button class="revisit-btn" onclick="snoozeItem(30)">+1 month</button>
+          </div>
+        </div>
+
+        <div>
+          <div class="detail-section-label">Tags (comma separated)</div>
+          <input class="form-input" id="d-tags" placeholder="e.g. ml, python, reading-list">
+        </div>
+
+        <a class="open-link-btn" id="d-open" href="#" target="_blank">↗ Open original source</a>
+      </div>
+      <div class="detail-footer">
+        <button class="del-btn" onclick="deleteSelected()">Delete</button>
+        <button class="save-btn" onclick="saveDetail()">Save changes</button>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<!-- ADD MODAL -->
+<div class="modal-overlay" id="modal" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <div class="modal-title">Add to Stash</div>
+
+    <div class="type-tabs" id="type-tabs">
+      <div class="type-tab active" data-type="x" onclick="selectType('x', this)">X / Twitter</div>
+      <div class="type-tab" data-type="reddit" onclick="selectType('reddit', this)">Reddit</div>
+      <div class="type-tab" data-type="github" onclick="selectType('github', this)">GitHub</div>
+      <div class="type-tab" data-type="book" onclick="selectType('book', this)">Book / PDF</div>
+      <div class="type-tab" data-type="link" onclick="selectType('link', this)">Other Link</div>
+    </div>
+
+    <div class="form-row">
+      <label class="form-label">Title *</label>
+      <input class="form-input" id="m-title" placeholder="What's this about?">
+    </div>
+
+    <div class="form-row" id="m-url-row">
+      <label class="form-label">URL / Link</label>
+      <input class="form-input" id="m-url" placeholder="https://..." oninput="autoDetectType()">
+    </div>
+
+    <div class="form-row" id="m-highlight-row" style="display:none">
+      <label class="form-label">Highlight / Key Passage (for books)</label>
+      <textarea class="form-textarea" id="m-highlight" placeholder="Paste an interesting quote or excerpt from the book..."></textarea>
+    </div>
+
+    <div class="form-row">
+      <label class="form-label">Notes / Why you saved this</label>
+      <textarea class="form-textarea" id="m-notes" placeholder="What caught your attention? Questions you have?"></textarea>
+    </div>
+
+    <div class="form-row">
+      <label class="form-label">Tags (comma separated)</label>
+      <input class="form-input" id="m-tags" placeholder="e.g. ai, learning, python">
+    </div>
+
+    <div class="form-row" id="m-revisit-row">
+      <label class="form-label">First revisit in</label>
+      <select class="form-select" id="m-revisit">
+        <option value="1">Tomorrow</option>
+        <option value="3" selected>3 days</option>
+        <option value="7">1 week</option>
+        <option value="14">2 weeks</option>
+      </select>
+    </div>
+
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeModal()">Cancel</button>
+      <button class="modal-save" onclick="saveItem()">Save to Stash</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──
+let items = JSON.parse(localStorage.getItem('stash_items') || '[]');
+let selectedId = null;
+let currentFilter = 'all';
+let currentTag = null;
+let sortMode = 'recent'; // recent, due, alpha
+let newItemType = 'x';
+
+function save() { localStorage.setItem('stash_items', JSON.stringify(items)); }
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+function daysFromNow(d) {
+  const t = new Date(); t.setDate(t.getDate() + d); return t.toISOString();
+}
+
+function isDue(item) {
+  if (!item.nextReview) return false;
+  return new Date(item.nextReview) <= new Date();
+}
+
+function daysDiff(iso) {
+  const diff = (new Date(iso) - new Date()) / 86400000;
+  return Math.ceil(diff);
+}
+
+function formatDate(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' });
+}
+
+// ── SEED DATA ──
+if (items.length === 0) {
+  items = [
+    {
+      id: uid(), type: 'github', title: 'vllm — High-throughput LLM serving engine',
+      url: 'https://github.com/vllm-project/vllm', notes: 'Continuous batching, PagedAttention — need to understand the memory management strategy better.',
+      tags: ['llm', 'inference', 'python'], highlight: '',
+      progress: 30, createdAt: new Date(Date.now() - 5 * 86400000).toISOString(),
+      nextReview: new Date(Date.now() - 86400000).toISOString()
+    },
+    {
+      id: uid(), type: 'reddit', title: 'r/MachineLearning: Why do transformers generalize?',
+      url: 'https://reddit.com/r/MachineLearning', notes: 'The top comment about implicit regularization is worth digging into.',
+      tags: ['transformers', 'theory', 'ml'], highlight: '',
+      progress: 0, createdAt: new Date(Date.now() - 2 * 86400000).toISOString(),
+      nextReview: new Date().toISOString()
+    },
+    {
+      id: uid(), type: 'book', title: 'Thinking, Fast and Slow — System 1 vs System 2',
+      url: '', notes: 'The anchoring effect chapter completely changed how I think about negotiations.',
+      tags: ['psychology', 'cognition', 'books'], highlight: 'A reliable way to make people believe in falsehoods is frequent repetition, because familiarity is not easily distinguished from truth.',
+      progress: 65, createdAt: new Date(Date.now() - 10 * 86400000).toISOString(),
+      nextReview: daysFromNow(4)
+    },
+    {
+      id: uid(), type: 'x', title: 'Andrej Karpathy on why tokenization is a bug',
+      url: 'https://twitter.com/karpathy', notes: 'Interesting take — character-level might come back if compute keeps scaling.',
+      tags: ['llm', 'nlp', 'tokenization'], highlight: '',
+      progress: 0, createdAt: new Date(Date.now() - 1 * 86400000).toISOString(),
+      nextReview: daysFromNow(3)
+    },
+    {
+      id: uid(), type: 'github', title: 'instructor — Structured outputs from LLMs',
+      url: 'https://github.com/jxnl/instructor', notes: 'Pydantic-based validation layer. Want to test this for data pipeline work.',
+      tags: ['llm', 'python', 'tools'], highlight: '',
+      progress: 10, createdAt: new Date(Date.now() - 3 * 86400000).toISOString(),
+      nextReview: daysFromNow(7)
+    },
+    {
+      id: uid(), type: 'link', title: 'Latent Space Podcast: RAG is dead, long live RAG',
+      url: 'https://www.latent.space', notes: 'Episode covers graphRAG and hybrid search. Needs a second listen.',
+      tags: ['rag', 'search', 'podcast'], highlight: '',
+      progress: 0, createdAt: new Date(Date.now() - 4 * 86400000).toISOString(),
+      nextReview: new Date().toISOString()
+    },
+  ];
+  save();
+}
+
+// ── RENDER ──
+function renderList() {
+  const q = document.getElementById('search-input').value.toLowerCase();
+  const list = document.getElementById('items-list');
+
+  let filtered = items.filter(it => {
+    const matchFilter = currentFilter === 'all' ? true :
+      currentFilter === 'due' ? isDue(it) :
+      it.type === currentFilter;
+    const matchTag = currentTag ? it.tags.includes(currentTag) : true;
+    const matchQ = !q || it.title.toLowerCase().includes(q) ||
+      (it.notes||'').toLowerCase().includes(q) ||
+      it.tags.join(' ').includes(q) ||
+      (it.highlight||'').toLowerCase().includes(q);
+    return matchFilter && matchTag && matchQ;
+  });
+
+  // sort
+  if (sortMode === 'recent') filtered.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+  else if (sortMode === 'due') filtered.sort((a,b) => new Date(a.nextReview||'9999') - new Date(b.nextReview||'9999'));
+  else filtered.sort((a,b) => a.title.localeCompare(b.title));
+
+  updateCounts();
+  renderTags();
+
+  if (filtered.length === 0) {
+    list.innerHTML = `<div class="no-results">No items found</div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map((it, i) => {
+    const due = isDue(it);
+    const soon = !due && it.nextReview && daysDiff(it.nextReview) <= 3;
+    const badgeClass = `badge-${it.type}`;
+    const typeLabel = { x: 'X', reddit: 'Reddit', github: 'GitHub', book: 'Book', link: 'Link' }[it.type];
+
+    return `<div class="item-card ${selectedId === it.id ? 'selected' : ''}" data-type="${it.type}" data-id="${it.id}" onclick="selectItem('${it.id}')" style="animation-delay:${i*0.03}s">
+      <div>
+        <div class="item-meta">
+          <span class="item-type-badge ${badgeClass}">${typeLabel}</span>
+          <span class="item-date">${formatDate(it.createdAt)}</span>
+        </div>
+        <div class="item-title">${it.title}</div>
+        ${it.notes ? `<div class="item-excerpt">${it.notes}</div>` : ''}
+        ${it.tags.length ? `<div class="item-tags">${it.tags.map(t => `<span class="item-tag">#${t}</span>`).join('')}</div>` : ''}
+        ${it.type === 'github' ? `<div class="item-progress">
+          <div class="progress-label">
+            <span class="progress-text">Understanding</span>
+            <span class="progress-pct">${it.progress}%</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${it.progress}%"></div></div>
+        </div>` : ''}
+      </div>
+      <div class="item-right">
+        ${due ? `<span class="revisit-badge due-now">Due now</span>` : ''}
+        ${soon ? `<span class="revisit-badge due-soon">${daysDiff(it.nextReview)}d</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateCounts() {
+  const types = ['x','reddit','github','book','link'];
+  document.getElementById('count-all').textContent = items.length;
+  types.forEach(t => {
+    const el = document.getElementById('count-' + t);
+    if (el) el.textContent = items.filter(i => i.type === t).length;
+  });
+  document.getElementById('due-count').textContent = items.filter(isDue).length;
+}
+
+function renderTags() {
+  const tagSet = {};
+  items.forEach(it => it.tags.forEach(t => { tagSet[t] = (tagSet[t]||0)+1; }));
+  const sorted = Object.entries(tagSet).sort((a,b) => b[1]-a[1]).slice(0, 20);
+  document.getElementById('tag-cloud').innerHTML = sorted.map(([t]) =>
+    `<span class="tag-chip ${currentTag===t?'active':''}" onclick="setTag('${t}')">#${t}</span>`
+  ).join('');
+}
+
+// ── SELECTION ──
+function selectItem(id) {
+  selectedId = id;
+  const it = items.find(i => i.id === id);
+  renderList();
+  if (!it) return;
+
+  document.getElementById('empty-detail').style.display = 'none';
+  const dc = document.getElementById('detail-content');
+  dc.style.display = 'flex';
+
+  const typeLabel = { x: 'X / Twitter', reddit: 'Reddit', github: 'GitHub', book: 'Book / PDF', link: 'Link' }[it.type];
+  const badgeClass = `badge-${it.type}`;
+  document.getElementById('d-badge').textContent = typeLabel;
+  document.getElementById('d-badge').className = `item-type-badge ${badgeClass}`;
+  document.getElementById('d-date').textContent = formatDate(it.createdAt);
+  document.getElementById('d-title').textContent = it.title;
+  const urlEl = document.getElementById('d-url');
+  urlEl.textContent = it.url || '(no URL — manual entry)';
+  urlEl.href = it.url || '#';
+  document.getElementById('d-notes').value = it.notes || '';
+  document.getElementById('d-tags').value = it.tags.join(', ');
+  document.getElementById('d-open').href = it.url || '#';
+
+  const hl = document.getElementById('highlight-section');
+  if (it.highlight) {
+    hl.style.display = 'block';
+    document.getElementById('d-highlight').textContent = it.highlight;
+  } else { hl.style.display = 'none'; }
+
+  const ps = document.getElementById('progress-section');
+  if (it.type === 'github') {
+    ps.style.display = 'block';
+    document.getElementById('d-progress').value = it.progress || 0;
+    document.getElementById('progress-val').textContent = (it.progress || 0) + '%';
+  } else { ps.style.display = 'none'; }
+}
+
+function updateProgressLabel() {
+  const v = document.getElementById('d-progress').value;
+  document.getElementById('progress-val').textContent = v + '%';
+}
+
+function saveDetail() {
+  const it = items.find(i => i.id === selectedId);
+  if (!it) return;
+  it.notes = document.getElementById('d-notes').value;
+  it.tags = document.getElementById('d-tags').value.split(',').map(t=>t.trim()).filter(Boolean);
+  if (it.type === 'github') it.progress = parseInt(document.getElementById('d-progress').value);
+  save(); renderList();
+}
+
+function deleteSelected() {
+  if (!selectedId) return;
+  if (!confirm('Delete this item?')) return;
+  items = items.filter(i => i.id !== selectedId);
+  selectedId = null;
+  document.getElementById('empty-detail').style.display = 'flex';
+  document.getElementById('detail-content').style.display = 'none';
+  save(); renderList();
+}
+
+function snoozeItem(days) {
+  const it = items.find(i => i.id === selectedId);
+  if (!it) return;
+  it.nextReview = daysFromNow(days);
+  save(); renderList();
+  // flash
+  const btn = event.target;
+  btn.style.background = 'rgba(200,240,96,0.3)';
+  setTimeout(() => btn.style.background = '', 600);
+}
+
+// ── FILTER ──
+function setFilter(f, el) {
+  currentFilter = f; currentTag = null;
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (el) el.classList.add('active');
+  renderList();
+}
+
+function setTag(t) {
+  currentTag = currentTag === t ? null : t;
+  renderList();
+}
+
+function cycleSort() {
+  const modes = ['recent','due','alpha'];
+  sortMode = modes[(modes.indexOf(sortMode)+1) % modes.length];
+  const labels = { recent:'Recent', due:'Due', alpha:'A–Z' };
+  document.getElementById('sort-label').textContent = labels[sortMode];
+  renderList();
+}
+
+// ── MODAL ──
+function openModal() {
+  document.getElementById('modal').classList.add('open');
+  document.getElementById('m-title').value = '';
+  document.getElementById('m-url').value = '';
+  document.getElementById('m-notes').value = '';
+  document.getElementById('m-tags').value = '';
+  document.getElementById('m-highlight').value = '';
+  selectType('x', document.querySelector('.type-tab[data-type="x"]'));
+  setTimeout(() => document.getElementById('m-title').focus(), 100);
+}
+
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+function handleOverlayClick(e) { if (e.target === document.getElementById('modal')) closeModal(); }
+
+function selectType(t, el) {
+  newItemType = t;
+  document.querySelectorAll('.type-tab').forEach(tab => tab.classList.remove('active'));
+  if (el) el.classList.add('active');
+  const isBook = t === 'book';
+  document.getElementById('m-highlight-row').style.display = isBook ? 'block' : 'none';
+}
+
+function autoDetectType() {
+  const url = document.getElementById('m-url').value.toLowerCase();
+  let detected = null;
+  if (url.includes('twitter.com') || url.includes('x.com')) detected = 'x';
+  else if (url.includes('reddit.com')) detected = 'reddit';
+  else if (url.includes('github.com')) detected = 'github';
+  if (detected) {
+    const tab = document.querySelector(`.type-tab[data-type="${detected}"]`);
+    if (tab) selectType(detected, tab);
+  }
+}
+
+function saveItem() {
+  const title = document.getElementById('m-title').value.trim();
+  if (!title) { document.getElementById('m-title').focus(); return; }
+  const days = parseInt(document.getElementById('m-revisit').value);
+  const item = {
+    id: uid(), type: newItemType, title,
+    url: document.getElementById('m-url').value.trim(),
+    notes: document.getElementById('m-notes').value.trim(),
+    highlight: document.getElementById('m-highlight').value.trim(),
+    tags: document.getElementById('m-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
+    progress: 0,
+    createdAt: new Date().toISOString(),
+    nextReview: daysFromNow(days)
+  };
+  items.unshift(item);
+  save();
+  closeModal();
+  renderList();
+  selectItem(item.id);
+}
+
+// keyboard shortcut
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') { openModal(); e.preventDefault(); }
+});
+
+// init
+renderList();
+</script>
+</body>
+</html>
